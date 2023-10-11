@@ -34,7 +34,11 @@ def create_pcap(data, pcap_file='pcap_data'):
             eth.data.dst = socket.inet_aton('127.0.0.1')
             eth.data.data.sport = 12345
             eth.data.data.dport = 80
-            eth.data.data.data = b''
+
+            payload = ','.join(f'{attr}:{value}' for attr, value in row.items())
+            eth.data.data.data = payload.encode('utf-8')
+
+            # eth.data.data.data = str(row['label']).encode()
 
             pcap_writer.writepkt(eth)
 
