@@ -22,7 +22,7 @@ def parseData():
 
     :return: pandas dataframe with data
     """
-    filepath = os.getcwd() + '\\data\\corrected'
+    filepath = os.getcwd() + '/data/corrected'
     columns = ['duration', 'protocol_type', 'service', 'flag', 'src_bytes',
                'dst_bytes', 'land', 'wrong_fragment', 'urgent', 'hot',
                'num_failed_logins', 'logged_in', 'num_compromised',
@@ -54,24 +54,6 @@ def scaleData(data):
             # Fit and transform the data
             data[[col]] = scaler.fit_transform(data[[col]])
     return data
-
-
-def draw_confusion_matrix(confusion_matrix, labels):
-    plt.figure(figsize=(8, 6))
-
-    sns.set(font_scale=0.8)  # Adjust font size
-
-    # Customize the heatmap
-    sns.heatmap(confusion_matrix, annot=True, fmt='d', cmap='Reds',
-                xticklabels=labels, yticklabels=labels)
-
-    # Add labels and title
-    plt.xlabel('Predicted')
-    plt.ylabel('Actual')
-    plt.title('Confusion Matrix')
-
-    # Display the heatmap
-    plt.show()
 
 
 def misuseClassifier(data):
@@ -125,8 +107,6 @@ def misuseClassifier(data):
     print(f'Accuracy: {accuracy}')
     # print(report)
     conf_matrix = confusion_matrix(y_test, y_pred)
-
-    draw_confusion_matrix(conf_matrix, attack_labels)
 
     # Calculate ratios for each label using the confusion matrix
     for i, label in enumerate(attack_labels):
