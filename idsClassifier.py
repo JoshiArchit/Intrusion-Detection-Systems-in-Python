@@ -88,7 +88,7 @@ def misuseClassifier(data):
                                                         stratify=y)
 
     # SVM Classifier model and training
-    svm = SVC(kernel='linear', C=10)
+    svm = SVC(kernel='rbf', C=10,gamma=1)
     svm.fit(X_train, y_train)
 
     # Classify test data using the svm model
