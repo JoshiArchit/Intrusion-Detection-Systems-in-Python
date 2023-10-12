@@ -1,0 +1,150 @@
+Accuracy: 0.9636581876249216
+/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/site-packages/sklearn/metrics/_classification.py:1469: UndefinedMetricWarning: Precision and F-score are ill-defined and being set to 0.0 in labels with no predicted samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, msg_start, len(result))
+Label: normal.
+False Positives: 7
+False Negatives: 4
+
+Label: snmpgetattack.
+False Positives: 14
+False Negatives: 34
+
+Label: named.
+False Positives: 10
+False Negatives: 8
+
+Label: xlock.
+False Positives: 0
+False Negatives: 2
+
+Label: smurf.
+False Positives: 7
+False Negatives: 9
+
+Label: ipsweep.
+False Positives: 0
+False Negatives: 7
+
+Label: multihop.
+False Positives: 2
+False Negatives: 5
+
+Label: xsnoop.
+False Positives: 0
+False Negatives: 1
+
+Label: sendmail.
+False Positives: 1
+False Negatives: 1
+
+Label: guess_passwd.
+False Positives: 4
+False Negatives: 0
+
+Label: saint.
+False Positives: 0
+False Negatives: 4
+
+Label: buffer_overflow.
+False Positives: 0
+False Negatives: 10
+
+Label: portsweep.
+False Positives: 4
+False Negatives: 9
+
+Label: pod.
+False Positives: 1
+False Negatives: 0
+
+Label: apache2.
+False Positives: 0
+False Negatives: 3
+
+Label: phf.
+False Positives: 6295
+False Negatives: 90
+
+Label: udpstorm.
+False Positives: 0
+False Negatives: 1
+
+Label: warezmaster.
+False Positives: 0
+False Negatives: 1
+
+Label: perl.
+False Positives: 6
+False Negatives: 5
+
+Label: satan.
+False Positives: 2
+False Negatives: 11
+
+Label: xterm.
+False Positives: 2
+False Negatives: 0
+
+Label: mscan.
+False Positives: 5
+False Negatives: 7
+
+Label: processtable.
+False Positives: 1
+False Negatives: 6
+
+Label: ps.
+False Positives: 27
+False Negatives: 351
+
+Label: nmap.
+False Positives: 353
+False Negatives: 39
+
+Label: rootkit.
+False Positives: 2
+False Negatives: 5
+
+Label: neptune.
+False Positives: 1
+False Negatives: 1
+
+Label: loadmodule.
+False Positives: 0
+False Negatives: 4645
+
+Label: back.
+False Positives: 0
+False Negatives: 1442
+
+Label: httptunnel.
+False Positives: 0
+False Negatives: 0
+
+Label: worm.
+False Positives: 1
+False Negatives: 6
+
+Label: mailbomb.
+False Positives: 0
+False Negatives: 1
+
+Label: ftp_write.
+False Positives: 34
+False Negatives: 62
+
+Label: teardrop.
+False Positives: 0
+False Negatives: 1
+
+Label: land.
+False Positives: 1
+False Negatives: 4
+
+Label: sqlattack.
+False Positives: 0
+False Negatives: 1
+
+Label: snmpguess.
+False Positives: 2
+False Negatives: 6
