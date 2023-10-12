@@ -1,6 +1,6 @@
 """
 Filename : idsClassifier.py
-Author : Archit Joshi
+Author : Archit Joshi & Parijat kawale
 Description :
 Language : python3
 """
