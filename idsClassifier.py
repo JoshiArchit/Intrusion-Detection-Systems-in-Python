@@ -5,8 +5,6 @@ Description :
 Language : python3
 """
 import os
-# import dpkt
-# import socket
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
@@ -14,6 +12,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import *
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 def parseData():
@@ -56,6 +56,24 @@ def scaleData(data):
     return data
 
 
+def draw_confusion_matrix(confusion_matrix, labels):
+    plt.figure(figsize=(8, 6))
+
+    sns.set(font_scale=0.8)  # Adjust font size
+
+    # Customize the heatmap
+    sns.heatmap(confusion_matrix, annot=True, fmt='d', cmap='Reds',
+                xticklabels=labels, yticklabels=labels)
+
+    # Add labels and title
+    plt.xlabel('Predicted')
+    plt.ylabel('Actual')
+    plt.title('Confusion Matrix')
+
+    # Display the heatmap
+    plt.show()
+
+
 def misuseClassifier(data):
     """
     Simulating a misuse-based IDS using a support vector machine model.
@@ -88,7 +106,7 @@ def misuseClassifier(data):
                                                         stratify=y)
 
     # SVM Classifier model and training
-    svm = SVC(kernel='rbf', C=10,gamma=1)
+    svm = SVC(kernel='rbf', C=10, gamma=1.0)
     svm.fit(X_train, y_train)
 
     # Classify test data using the svm model
@@ -107,6 +125,8 @@ def misuseClassifier(data):
     print(f'Accuracy: {accuracy}')
     # print(report)
     conf_matrix = confusion_matrix(y_test, y_pred)
+
+    draw_confusion_matrix(conf_matrix, attack_labels)
 
     # Calculate ratios for each label using the confusion matrix
     for i, label in enumerate(attack_labels):
@@ -187,7 +207,7 @@ def main():
     dataframe = parseData()
     dataframe = scaleData(dataframe)
     print("+++++++++ Running misuse based IDS +++++++++")
-    # misuseClassifier(dataframe)
+    misuseClassifier(dataframe)
     print("\n\n=====================================================")
     print("+++++++++ Running anomaly based IDS +++++++++")
     anomalyClassifier(dataframe)
