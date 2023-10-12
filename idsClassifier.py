@@ -156,7 +156,7 @@ def anomalyClassifier(data):
     model.fit(X_train)
 
     y_pred = model.predict(X_test)
-
+    y_pred = np.where(y_pred == "normal.", 1, -1)
     # Evaluate the model (you might need a different metric depending on your use case)
     accuracy = accuracy_score(y_test_numeric, y_pred)
     conf_matrix = confusion_matrix(y_test_numeric, y_pred)
