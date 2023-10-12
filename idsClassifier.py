@@ -17,6 +17,11 @@ from sklearn.metrics import *
 
 
 def parseData():
+    """
+    Parsing data from the KDD dataset.
+
+    :return: pandas dataframe with data
+    """
     filepath = os.getcwd() + '\\data\\corrected'
     columns = ['duration', 'protocol_type', 'service', 'flag', 'src_bytes',
                'dst_bytes', 'land', 'wrong_fragment', 'urgent', 'hot',
@@ -32,7 +37,12 @@ def parseData():
                'dst_host_serror_rate', 'dst_host_srv_serror_rate',
                'dst_host_rerror_rate', 'dst_host_srv_rerror_rate', 'label']
     data = pd.read_csv(filepath, names=columns)
-    data = data[data['label'] != "imap."]
+
+    # Clean data and remove outliers with minimal occurrence
+    label_counts = data['label'].value_counts()
+    valid_labels = label_counts[label_counts >= 2].index
+    data = data[data['label'].isin(valid_labels)]
+
     return data
 
 
@@ -46,28 +56,18 @@ def scaleData(data):
     return data
 
 
-def create_pcap(data, pcap_file="pcap_data"):
-    with open(pcap_file, 'wb') as f:
-        pcap_writer = dpkt.pcap.Writer(f)
-        for _, row in data.iterrows():
-            eth = dpkt.ethernet.Ethernet()
-
-            eth.data = dpkt.ip.IP()
-            eth.data.data = dpkt.tcp.TCP()
-
-            eth.data.src = socket.inet_aton('127.0.0.1')  # Loopback IP
-            eth.data.dst = socket.inet_aton('127.0.0.1')  # Loopback IP
-            eth.data.data.sport = 12345  # Replace with your source port
-            eth.data.data.dport = 80  # Replace with your destination port
-            eth.data.data.data = b''  # Empty payload for simplicity
-
-            pcap_writer.writepkt(eth)
-
-
 def misuseClassifier(data):
+    """
+    Simulating a misuse-based IDS using a support vector machine model.
+
+    :param data: labelled network dataframe data.
+    :return: None
+    """
+
     X = data.iloc[:, :-1]  # Features
     y = data.iloc[:, -1]  # Labels
 
+    # Hot coding categorical data
     num_cols = X.select_dtypes(include=['int64', 'float64']).columns
     cat_cols = X.select_dtypes(include=['object']).columns
 
@@ -81,22 +81,26 @@ def misuseClassifier(data):
     # Combine numerical and encoded categorical variables
     X_processed = np.hstack((X_num, X_cat_encoded))
 
+    # Split data into testing and training data
     X_train, X_test, y_train, y_test = train_test_split(X_processed, y,
                                                         test_size=0.6,
                                                         random_state=42,
                                                         stratify=y)
 
-    svm = SVC(kernel='rbf',
-              C=10, gamma=1.0)  # You can choose different kernels (linear, rbf, etc.) and adjust C as needed
+    # SVM Classifier model and training
+    svm = SVC(kernel='linear', C=10)
     svm.fit(X_train, y_train)
+
+    # Classify test data using the svm model
     y_pred = svm.predict(X_test)
 
     attack_labels = data['label'].unique().tolist()
 
     for label in y_pred:
-        if label in attack_labels and "%normal%" not in label:
+        if label in attack_labels and "normal." not in label:
             print(f"Detected Attack: {label}")
 
+    # Calculate and display metrics
     accuracy = accuracy_score(y_test, y_pred)
     report = classification_report(y_test, y_pred, target_names=data[
         'label'].unique().tolist())
@@ -104,21 +108,25 @@ def misuseClassifier(data):
     # print(report)
     conf_matrix = confusion_matrix(y_test, y_pred)
 
-    # Calculate ratios for each label
+    # Calculate ratios for each label using the confusion matrix
     for i, label in enumerate(attack_labels):
-        true_positives = conf_matrix[i, i]
-        false_positives = conf_matrix[i, :].sum() - true_positives
-        true_negatives = conf_matrix.sum() - conf_matrix[:,
-                                             i].sum() - conf_matrix[i,
-                                                        :].sum() + true_positives
-        false_negatives = conf_matrix[:, i].sum() - true_positives
+        false_positives = conf_matrix[:, i].sum() - conf_matrix[i, i]
+        false_negatives = conf_matrix[i, :].sum() - conf_matrix[i, i]
 
         print(f'Label: {label}')
         print(f'False Positives: {false_positives}')
         print(f'False Negatives: {false_negatives}')
+        print()
 
 
 def anomalyClassifier(data):
+    """
+    Anomaly based IDS using Isolation forest classifier.
+
+    :param data: labelled network dataframe data.
+    :return: None
+    """
+
     X = data.iloc[:, :-1]  # Features
     y = data.iloc[:, -1]  # Labels
 
@@ -136,29 +144,53 @@ def anomalyClassifier(data):
     X_processed = np.hstack((X_num, X_cat_encoded))
 
     X_train, X_test, y_train, y_test = train_test_split(X_processed, y,
-                                                        test_size=0.6,
+                                                        test_size=0.4,
                                                         random_state=42,
                                                         stratify=y)
-
+    # Adjust label to suit anomaly based detection.
+    # -1 == anomaly, 1 == normal
+    y_test_numeric = np.where(y_test == "normal.", 1, -1)
     model = IsolationForest(
-        contamination=0.5)  # Adjust the contamination parameter
+        contamination=0.4)  # Adjust the contamination parameter
 
     model.fit(X_train)
+
     y_pred = model.predict(X_test)
 
     # Evaluate the model (you might need a different metric depending on your use case)
-    accuracy = (y_pred == -1).sum() / len(y_pred)
+    accuracy = accuracy_score(y_test_numeric, y_pred)
+    conf_matrix = confusion_matrix(y_test_numeric, y_pred)
+
+    # Assuming -1 is anomaly and 1 is normal
+    true_positives = conf_matrix[0, 0]
+    false_negatives = conf_matrix[0, 1]
+    false_positives = conf_matrix[1, 0]
+    true_negatives = conf_matrix[1, 1]
+
+    # Calculate other metrics as needed (e.g., accuracy, precision, recall, F1-score)
+    precision = true_positives / (true_positives + false_positives)
+    recall = true_positives / (true_positives + false_negatives)
+    f1_score = 2 * (precision * recall) / (precision + recall)
+
+    # Print the results
+    print(f'True Positives: {true_positives}')
+    print(f'False Negatives: {false_negatives}')
+    print(f'False Positives: {false_positives}')
+    print(f'True Negatives: {true_negatives}')
     print(f'Accuracy: {accuracy}')
+    print(f'Precision: {precision}')
+    print(f'Recall: {recall}')
+    print(f'F1 Score: {f1_score}')
 
 
 def main():
     dataframe = parseData()
     dataframe = scaleData(dataframe)
-    # label_frequencies = dataframe['label'].value_counts()
-    # for label, frequency in label_frequencies.items():
-    #     print(f"Label {label} occurs {frequency} times.")
-    misuseClassifier(dataframe)
-    # anomalyClassifier(dataframe)
+    print("+++++++++ Running misuse based IDS +++++++++")
+    # misuseClassifier(dataframe)
+    print("\n\n=====================================================")
+    print("+++++++++ Running anomaly based IDS +++++++++")
+    anomalyClassifier(dataframe)
 
 
 if __name__ == "__main__":
