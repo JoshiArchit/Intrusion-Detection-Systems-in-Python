@@ -1,7 +1,8 @@
 """
 Filename : idsClassifier.py
 Author : Archit Joshi & Parijat kawale
-Description :
+Description : Designing an Intrusion detection system using classification
+algorithms.
 Language : python3
 """
 import os
