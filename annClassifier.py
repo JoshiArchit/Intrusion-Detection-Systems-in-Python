@@ -123,7 +123,7 @@ def annMisuseClassifierA(data):
     Misuse based IDS using ANN with softmax activation.
 
     :param data: scaled data with labels
-    :return:
+    :return: None
     """
     X = data.iloc[:, :-1]  # Features
     y = data.iloc[:, -1]  # Labels
