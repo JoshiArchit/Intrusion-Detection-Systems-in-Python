@@ -6,8 +6,13 @@ Language : python3
 """
 import os
 
+import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from sklearn.metrics import classification_report
 
 
 def parseData():
@@ -49,9 +54,57 @@ def scaleData(data):
             data[[col]] = scaler.fit_transform(data[[col]])
     return data
 
+def apply_ann_classifier(data):
+
+    X = data.iloc[:,:-1]
+    y = data.iloc[:, -1]
+
+    # Hot coding categorical data
+    num_cols = X.select_dtypes(include=['int64', 'float64']).columns
+    cat_cols = X.select_dtypes(include=['object']).columns
+
+
+    X_num = X[num_cols]
+    X_cat = X[cat_cols]
+
+    # Apply one-hot encoding to categorical variables
+    encoder = OneHotEncoder(drop='first', sparse_output=False)
+    X_cat_encoded = encoder.fit_transform(X_cat)
+
+    # Combine numerical and encoded categorical variables
+    X_processed = np.hstack((X_num, X_cat_encoded))
+
+    # One-hot encode the target variable
+    encoder = OneHotEncoder(sparse=False)
+    y_encoded = encoder.fit_transform(y.values.reshape(-1, 1))
+
+    # Now split the data
+    X_train, X_test, y_train, y_test = train_test_split(X_processed, y_encoded, test_size=0.6, random_state=42,
+                                                        stratify=y)
+
+    model = Sequential()
+    model.add(Dense(64, input_dim=X_train.shape[1], activation='relu'))
+    model.add(Dense(32, activation='relu'))
+    # model.add(Dense(labels.shape[1], activation='softmax'))  # For misuse-based IDS
+
+    # Step 4: Training the ANN
+    model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+    model.add(
+        Dense(y_encoded.shape[1], activation='softmax'))  # Adjust the number of neurons to match the number of classes
+
+    model.fit(X_train, y_train, epochs=10, batch_size=32, validation_split=0.1)
+
+    # Step 5: Evaluation
+    y_pred = model.predict(X_test)
+    y_pred_classes = np.argmax(y_pred, axis=1)
+    y_test_classes = np.argmax(y_test, axis=1)
+    print(classification_report(y_test_classes, y_pred_classes))
+
+
 def main():
     dataframe = parseData()
     dataframe = scaleData(dataframe)
+    apply_ann_classifier(dataframe)
 
 
 if __name__ == "__main__":
