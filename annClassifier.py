@@ -6,7 +6,7 @@ Neural Networks.
 Language : python3
 """
 import os
-
+import warnings
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -225,12 +225,14 @@ def annMisuseClassifier(data):
 
 
 def main():
+    warnings.filterwarnings('ignore')
     dataframe = parseData()
     dataframe = scaleData(dataframe)
     print("\n======== Running Anomaly based ANN Classifier ========")
     annAnomalyClassifier(dataframe)
     print("\n======== Running Misuse based ANN Classifier ========")
     annMisuseClassifier(dataframe)
+    warnings.filterwarnings('default')
 
 
 if __name__ == "__main__":
