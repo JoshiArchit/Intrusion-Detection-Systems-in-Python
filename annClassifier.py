@@ -1,5 +1,5 @@
 """
-Filename : analmolyannClassifier.py
+Filename : annClassifier.py
 Author : Archit Joshi, Parijat Kawale
 Description : Implementing Misuse based and anomaly based IDS using Artificial
 Neural Networks.
@@ -15,6 +15,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder, MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
 
 
 def parseData():
@@ -117,8 +118,25 @@ def annAnomalyClassifier(data):
     y_test_classes = np.argmax(y_test, axis=1)
     print(classification_report(y_test_classes, y_pred_classes))
 
+    # Step 6: Confusion matrix and ratios
+    # Calculate the confusion matrix
+    conf_matrix = confusion_matrix(y_test_classes, y_pred_classes)
 
-def annMisuseClassifierA(data):
+    # Extract values from the confusion matrix
+    FP = conf_matrix.sum(axis=0) - np.diag(conf_matrix)
+    FN = conf_matrix.sum(axis=1) - np.diag(conf_matrix)
+    TP = np.diag(conf_matrix)
+    TN = conf_matrix.sum() - (FP + FN + TP)
+
+    # Calculate false positive and false negative ratios
+    false_positive_ratio = FP.sum() / (FP.sum() + TN.sum())
+    false_negative_ratio = FN.sum() / (FN.sum() + TP.sum())
+
+    print(f'False Positive Ratio: {false_positive_ratio}')
+    print(f'False Negative Ratio: {false_negative_ratio}')
+
+
+def annMisuseClassifier(data):
     """
     Misuse based IDS using ANN with softmax activation.
 
@@ -189,14 +207,30 @@ def annMisuseClassifierA(data):
     y_pred = np.argmax(y_pred, axis=1)
     print(classification_report(y_test, y_pred))
 
+    # Calculating confusion matrix values
+    conf_matrix = confusion_matrix(y_test, y_pred)
+
+    # Extract values from the confusion matrix
+    FP = conf_matrix.sum(axis=0) - np.diag(conf_matrix)
+    FN = conf_matrix.sum(axis=1) - np.diag(conf_matrix)
+    TP = np.diag(conf_matrix)
+    TN = conf_matrix.sum() - (FP + FN + TP)
+
+    # Calculate overall false positive and false negative ratios
+    overall_false_positive_ratio = FP.sum() / (FP.sum() + TN.sum())
+    overall_false_negative_ratio = FN.sum() / (FN.sum() + TP.sum())
+
+    print(f'Overall False Positive Ratio: {overall_false_positive_ratio}')
+    print(f'Overall False Negative Ratio: {overall_false_negative_ratio}')
+
 
 def main():
     dataframe = parseData()
     dataframe = scaleData(dataframe)
-    # print("\n======== Running Anomaly based ANN Classifier ========")
-    # annAnomalyClassifier(dataframe)
+    print("\n======== Running Anomaly based ANN Classifier ========")
+    annAnomalyClassifier(dataframe)
     print("\n======== Running Misuse based ANN Classifier ========")
-    annMisuseClassifierA(dataframe)
+    annMisuseClassifier(dataframe)
 
 
 if __name__ == "__main__":
