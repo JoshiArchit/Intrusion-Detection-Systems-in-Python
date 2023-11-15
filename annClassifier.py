@@ -6,16 +6,19 @@ Neural Networks.
 Language : python3
 """
 import os
+import random
 import warnings
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import IsolationForest
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import StandardScaler, OneHotEncoder, MinMaxScaler
+from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
+from sklearn.svm import SVC
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import *
 
 
 def parseData():
@@ -224,6 +227,181 @@ def annMisuseClassifier(data):
     print(f'Overall False Negative Ratio: {overall_false_negative_ratio}')
 
 
+def modifiedDataMisuseIDS(data):
+    """
+    Misuse based IDS trained after removing 2 labels from training data to
+    gauge generalization.
+
+    :param data: dataset
+    :return: None
+    """
+    random.seed(42)
+    attacks = list(data['label'].unique())
+    attacks_to_remove = random.sample(attacks, 2)
+    ## Removing most frequent labels
+    # attack_counts = data['label'].value_counts()
+    # attacks_to_remove = attack_counts.head(3).index.tolist()
+    # attacks_to_remove.remove('normal.')
+
+    print(
+        f"Attacks removed from training data : {attacks_to_remove}\nThey are "
+        f"still present in the testing data.Accuracy might be affected.")
+    # Filter the DataFrame based on the selected labels
+    filtered_data = data[data['label'].isin(attacks_to_remove)]
+
+    # Get the count of data points with labels in attacks_to_remove
+    count_of_points = len(filtered_data)
+
+    # Calculate the total number of data points
+    total_data_points = len(data)
+
+    # Calculate the proportion
+    proportion = count_of_points / total_data_points
+
+    print(
+        f"Proportion of data points in the dataset with labels in attacks_to_remove: {proportion:.2%}")
+
+    X = data.iloc[:, :-1]  # Features
+    y = data.iloc[:, -1]  # Labels
+    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                        test_size=0.6,
+                                                        random_state=42,
+                                                        stratify=y)
+
+    # Removed labels and corresponding  from X_train, y_train
+    mask_train = ~y_train.isin(attacks_to_remove)
+    X_train = X_train[mask_train]
+    y_train = y_train[mask_train]
+
+    # Process the data and prepare for models.
+    # Data preprocessing for categorical variables
+    num_cols = X.select_dtypes(include=['int64', 'float64']).columns
+    cat_cols = X.select_dtypes(include=['object']).columns
+
+    X_train_num = X_train[num_cols]
+    X_test_num = X_test[num_cols]
+    X_train_cat = X_train[cat_cols]
+    X_test_cat = X_test[cat_cols]
+
+    # Apply one-hot encoding to categorical variables
+    encoder = OneHotEncoder(drop='first', sparse_output=False,
+                            handle_unknown='ignore')
+    X_train_cat_encoded = encoder.fit_transform(X_train_cat)
+    X_test_cat_encoded = encoder.transform(X_test_cat)
+
+    # Combine numerical and encoded categorical variables for training and test
+    X_train_processed = np.hstack((X_train_num, X_train_cat_encoded))
+    X_test_processed = np.hstack((X_test_num, X_test_cat_encoded))
+
+    # SVM Classifier model and training
+    svm = SVC(kernel='rbf', C=10, gamma=1.0)
+    svm.fit(X_train_processed, y_train)
+    print("MODEL TRAINED"
+          )
+    y_pred = svm.predict(X_test_processed)
+    print("Prediction completed for test data")
+    accuracy = accuracy_score(y_test, y_pred)
+    report = classification_report(y_test, y_pred, target_names=data[
+        'label'].unique().tolist())
+    print(f'Accuracy: {accuracy}')
+    # print(report)
+    conf_matrix = confusion_matrix(y_test, y_pred)
+    attack_labels = data['label'].unique().tolist()
+
+    # Calculate ratios for each label using the confusion matrix
+    for i, label in enumerate(attack_labels):
+        false_positives = conf_matrix[:, i].sum() - conf_matrix[i, i]
+        false_negatives = conf_matrix[i, :].sum() - conf_matrix[i, i]
+
+        print(f'Label: {label}')
+        print(f'False Positives: {false_positives}')
+        print(f'False Negatives: {false_negatives}')
+        print()
+
+
+def modifiedDataAnomalyIDS(data):
+    """
+    Removing 2 attack labels from the training data to gauge generalization of
+    the model
+    :param data: dataset
+    :return: None
+    """
+    ## Remove attacks with least proportion
+    # random.seed(42)
+    # attacks = list(data['label'].unique())
+    # attacks_to_remove = random.sample(attacks, 2)
+    attack_counts = data['label'].value_counts()
+    attacks_to_remove = attack_counts.head(3).index.tolist()
+    attacks_to_remove.remove('normal.')
+    print(
+        f"Attacks removed from training data : {attacks_to_remove}\nThey are "
+        f"still present in the testing data.Accuracy might be affected.")
+
+    X = data.iloc[:, :-1]  # Features
+    y = data.iloc[:, -1]  # Labels
+    X_train, X_test, y_train, y_test = train_test_split(X, y,
+                                                        test_size=0.4,
+                                                        random_state=42,
+                                                        stratify=y)
+    mask_train = ~y_train.isin(attacks_to_remove)
+    X_train = X_train[mask_train]
+    y_train = y_train[mask_train]
+
+    num_cols = X_train.select_dtypes(include=['int64', 'float64']).columns
+    cat_cols = X_train.select_dtypes(include=['object']).columns
+
+    X_train_num = X_train[num_cols]
+    X_train_cat = X_train[cat_cols]
+    X_test_num = X_test[num_cols]
+    X_test_cat = X_test[cat_cols]
+
+    # Apply one-hot encoding to categorical variables
+    encoder = OneHotEncoder(drop='first', sparse_output=False,
+                            handle_unknown='ignore')
+    X_train_cat_encoded = encoder.fit_transform(X_train_cat)
+    X_test_cat_encoded = encoder.transform(X_test_cat)
+
+    # Combine numerical and encoded categorical variables
+    X_train_processed = np.hstack((X_train_num, X_train_cat_encoded))
+    X_test_processed = np.hstack((X_test_num, X_test_cat_encoded))
+
+    y_test_numeric = np.where(y_test == "normal.", 1, -1)
+    model = IsolationForest(
+        contamination=0.4)  # Adjust the contamination parameter
+
+    model.fit(X_train_processed)
+    print("Model TRAINED")
+
+    y_pred = model.predict(X_test_processed)
+    y_pred = np.where(y_pred == "normal.", 1, -1)
+    print("Model TESTED")
+
+    # Evaluate the model (you might need a different metric depending on your use case)
+    accuracy = accuracy_score(y_test_numeric, y_pred)
+    conf_matrix = confusion_matrix(y_test_numeric, y_pred)
+
+    # Assuming -1 is anomaly and 1 is normal
+    true_positives = conf_matrix[0, 0]
+    false_negatives = conf_matrix[0, 1]
+    false_positives = conf_matrix[1, 0]
+    true_negatives = conf_matrix[1, 1]
+
+    # Calculate other metrics as needed (e.g., accuracy, precision, recall, F1-score)
+    precision = true_positives / (true_positives + false_positives)
+    recall = true_positives / (true_positives + false_negatives)
+    f1_score = 2 * (precision * recall) / (precision + recall)
+
+    # Print the results
+    print(f'True Positives: {true_positives}')
+    print(f'False Negatives: {false_negatives}')
+    print(f'False Positives: {false_positives}')
+    print(f'True Negatives: {true_negatives}')
+    print(f'Accuracy: {accuracy}')
+    print(f'Precision: {precision}')
+    print(f'Recall: {recall}')
+    print(f'F1 Score: {f1_score}')
+
+
 def main():
     warnings.filterwarnings('ignore')
     dataframe = parseData()
@@ -232,6 +410,13 @@ def main():
     annAnomalyClassifier(dataframe)
     print("\n======== Running Misuse based ANN Classifier ========")
     annMisuseClassifier(dataframe)
+
+    print(
+        "\n======== Running IDS with 2 attacks removed from the training data ========")
+    print("\n======== Misuse based IDS with modified data")
+    modifiedDataMisuseIDS(dataframe)
+    print("\n======== Anomaly based IDS with modified data")
+    modifiedDataAnomalyIDS(dataframe)
     warnings.filterwarnings('default')
 
 
