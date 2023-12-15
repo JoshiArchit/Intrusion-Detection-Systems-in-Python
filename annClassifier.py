@@ -10,6 +10,7 @@ import random
 import warnings
 import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 from sklearn.ensemble import IsolationForest
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
@@ -17,7 +18,6 @@ from sklearn.preprocessing import OneHotEncoder, MinMaxScaler
 from sklearn.svm import SVC
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
-from sklearn.metrics import classification_report
 from sklearn.metrics import *
 
 
@@ -27,7 +27,7 @@ def parseData():
 
     :return: pandas dataframe with data
     """
-    filepath = os.getcwd() + '/data/corrected'
+    filepath = os.getcwd() + '/data/datasetKDD'
     columns = ['duration', 'protocol_type', 'service', 'flag', 'src_bytes',
                'dst_bytes', 'land', 'wrong_fragment', 'urgent', 'hot',
                'num_failed_logins', 'logged_in', 'num_compromised',
@@ -150,6 +150,7 @@ def annMisuseClassifier(data):
     y = data.iloc[:, -1]  # Labels
 
     # Encode labels for logits and multi-class classification
+    label_encoder = LabelEncoder()
     y_encoded = LabelEncoder().fit_transform(y)
     y = pd.DataFrame({'Encoded_Labels': y_encoded})
 
@@ -199,8 +200,12 @@ def annMisuseClassifier(data):
                   metrics=['accuracy'])
 
     # Train the model
-    model.fit(X_train, y_train, epochs=10, batch_size=32,
-              validation_data=(X_val, y_val))
+    history = model.fit(X_train, y_train, epochs=10, batch_size=32,
+                        validation_data=(X_val, y_val))
+
+    accuracy_dict = dict()
+    for epoch, acc in enumerate(history.history['accuracy']):
+        accuracy_dict[epoch] = acc
 
     # Evaluate the model on a test set
     test_loss, test_accuracy = model.evaluate(X_test, y_test)
@@ -226,6 +231,8 @@ def annMisuseClassifier(data):
     print(f'Overall False Positive Ratio: {overall_false_positive_ratio}')
     print(f'Overall False Negative Ratio: {overall_false_negative_ratio}')
 
+    return accuracy_dict
+
 
 def modifiedDataMisuseIDS(data):
     """
@@ -238,10 +245,6 @@ def modifiedDataMisuseIDS(data):
     random.seed(42)
     attacks = list(data['label'].unique())
     attacks_to_remove = random.sample(attacks, 2)
-    ## Removing most frequent labels
-    # attack_counts = data['label'].value_counts()
-    # attacks_to_remove = attack_counts.head(3).index.tolist()
-    # attacks_to_remove.remove('normal.')
 
     print(
         f"Attacks removed from training data : {attacks_to_remove}\nThey are "
@@ -326,10 +329,6 @@ def modifiedDataAnomalyIDS(data):
     :param data: dataset
     :return: None
     """
-    ## Remove attacks with least proportion
-    # random.seed(42)
-    # attacks = list(data['label'].unique())
-    # attacks_to_remove = random.sample(attacks, 2)
     attack_counts = data['label'].value_counts()
     attacks_to_remove = attack_counts.head(3).index.tolist()
     attacks_to_remove.remove('normal.')
@@ -402,15 +401,49 @@ def modifiedDataAnomalyIDS(data):
     print(f'F1 Score: {f1_score}')
 
 
+def timeSeriesGraph(accuracy_dict):
+    """
+    Time series plot for misuse based IDS's epochs vs accuracy.
+
+    :param accuracy_dict: accuracy statistics per epoch.
+    :return: None
+    """
+    epochs = list(accuracy_dict.keys())
+    accuracies = list(accuracy_dict.values())
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, accuracies, marker='o', linestyle='-', color='b')
+    plt.title('Training Accuracy Over Epochs ANN based misuse IDS')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.grid(True)
+    plt.show()
+
+
 def main():
     warnings.filterwarnings('ignore')
+
+    # Parse and clean data
     dataframe = parseData()
+
+    # Scale data
     dataframe = scaleData(dataframe)
+
+    # Run anomaly based classifier
     print("\n======== Running Anomaly based ANN Classifier ========")
     annAnomalyClassifier(dataframe)
-    print("\n======== Running Misuse based ANN Classifier ========")
-    annMisuseClassifier(dataframe)
 
+    # Run misuse based classifier
+    print("\n======== Running Misuse based ANN Classifier ========")
+    accuracy_data = annMisuseClassifier(dataframe)
+    timeSeriesGraph(accuracy_data)
+
+    # # ================== MODIFIED IDS using classifiers ==================# #
+    # The idea is to remove attacks from training and introduce them directly #
+    # to the model during testing. This would depict the models weakness to   #
+    # adapt to new and generalized data and thus highlighting the need for    #
+    # unsupervised learning.                                                  #
+    # # ====================================================================# #
     print(
         "\n======== Running IDS with 2 attacks removed from the training data ========")
     print("\n======== Misuse based IDS with modified data")
