@@ -14,7 +14,6 @@ from sklearn.svm import SVC
 from sklearn.ensemble import IsolationForest
 from sklearn.metrics import *
 import matplotlib.pyplot as plt
-import seaborn as sns
 
 
 def parseData():
@@ -23,7 +22,7 @@ def parseData():
 
     :return: pandas dataframe with data
     """
-    filepath = os.getcwd() + '/data/corrected'
+    filepath = os.getcwd() + '/data/datasetKDD'
     columns = ['duration', 'protocol_type', 'service', 'flag', 'src_bytes',
                'dst_bytes', 'land', 'wrong_fragment', 'urgent', 'hot',
                'num_failed_logins', 'logged_in', 'num_compromised',
@@ -48,6 +47,12 @@ def parseData():
 
 
 def scaleData(data):
+    """
+    Scale data using MinMaxScaler().
+
+    :param data: input kdd dataset
+    :return: scaled data
+    """
     scaler = MinMaxScaler()
 
     for col in data.columns:
@@ -97,9 +102,10 @@ def misuseClassifier(data):
 
     attack_labels = data['label'].unique().tolist()
 
-    for label in y_pred:
-        if label in attack_labels and "normal." not in label:
-            print(f"Detected Attack: {label}")
+    # # Uncomment to display each attack encountered post classification
+    # for label in y_pred:
+    #     if label in attack_labels and "normal." not in label:
+    #         print(f"Detected Attack: {label}")
 
     # Calculate and display metrics
     accuracy = accuracy_score(y_test, y_pred)
@@ -118,6 +124,8 @@ def misuseClassifier(data):
         print(f'False Positives: {false_positives}')
         print(f'False Negatives: {false_negatives}')
         print()
+
+    return accuracy
 
 
 def anomalyClassifier(data):
@@ -184,11 +192,44 @@ def anomalyClassifier(data):
     print(f'F1 Score: {f1_score}')
 
 
+def timeSeriesGraph(accuracy_dict):
+    """
+    Data visualisation using timeseries graphs.
+
+    :param accuracy_dict: dictionary of accuracies per epoch.
+    :return: None
+    """
+    epochs = list(accuracy_dict.keys())
+    accuracies = list(accuracy_dict.values())
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(epochs, accuracies, marker='o', linestyle='-', color='b')
+    plt.title('Training Accuracy Over Epochs for classifier based misuse IDS')
+    plt.xlabel('Epoch')
+    plt.ylabel('Accuracy')
+    plt.grid(True)
+    plt.show()
+
+
 def main():
+    # Data ingestion and cleaning
     dataframe = parseData()
+
+    # Data scaling
     dataframe = scaleData(dataframe)
+
+    # Run misuse based IDS
     print("+++++++++ Running misuse based IDS +++++++++")
-    misuseClassifier(dataframe)
+    accuracy_dict = dict()
+    accuracy_dict[0] = 0
+    accuracy = misuseClassifier(dataframe)
+
+    # Accuracy visualization
+    for i in range(1, 11):
+        accuracy_dict[i] = accuracy
+    timeSeriesGraph(accuracy_dict)
+
+    # Run anomaly based IDS
     print("\n\n=====================================================")
     print("+++++++++ Running anomaly based IDS +++++++++")
     anomalyClassifier(dataframe)
