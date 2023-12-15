@@ -33,31 +33,36 @@ make sure the dependencies are satisfied before execution.
 ***
 
 <h5> Project Phases</h5>
-<ol>
-1. <b>Phase 1 </b>
+<ul>
 
+<li><p><b>Phase 1 </b><br>
 This phase focuses on identifying the data to work on, data preperation and 
 cleaning as well as experimenting with current state of the art IDS like 
 Snort and Suricata. From our initial exploration with the data set we had, 
-we resorted to using classifier techniques to develop generic IDS in python.
-<br><br>
-Phase 2 Code - [idsClassifier.py](idsClassifier.py)<br>
-Phase 2 Report - [Project_Phase_1.pdf](Project_Phase_1.pdf)
+we resorted to using classifier techniques to develop generic IDS in python.</p>
 
-2. <b> Phase 2 </b>
+Phase 1 Code - [idsClassifier.py](idsClassifier.py)<br>
+Phase 1 Report - [Project_Phase_1.pdf](Project_Phase_1.pdf)
+</li>
+<br>
 
+<li><p><b>Phase 2 </b><br>
 This phase focuses on realising the shortcomings in Phase 1 and using 
 Artificial Neural Networks (ANN) to recreate the IDS models for misuse and 
-anomaly based IDS.<br><br>
+anomaly based IDS.</p>
+
 Phase 2 Code - [annClassifier.py](annClassifier.py)<br>
 Phase 2 Report - [Project_Phase_2.pdf](Project_Phase_2.pdf)
+</li>
+<br>
 
-3. <b> Phase 3 </b>
-
+<li><p><b>Phase 3 </b><br>
 This phase deals with comparing the approaches in Phase 1 and 2, drawing up 
-statistics and addressing shortcomings and room for improvement.<br><br>
-Phase 3 Report - [Project_Phase_3.pdf](Project_Phase_3.pdf)
+statistics and addressing shortcomings and room for improvement.</p>
 
-</ol>
+Phase 3 Report - [Project_Phase_3.pdf](Project_Phase_3.pdf)
+</li>
+<br>
+</ul>
 
 ***
