@@ -1,6 +1,12 @@
 # Intrusion Detection Systems
-CSCI735 - Foundations of Intelligent Security Systems.<br>
-Rochester Institute of Technology, Fall 2023
+<h3>CSCI735 - Foundations of Intelligent Security Systems.<br>
+Rochester Institute of Technology, Fall 2023.<br></h3>
+<p><b>Contributors:</b><br>
+1. Archit Joshi<br>
+2.Parijat Kawale</p>
+
+<p><b>Instructor : </b><br>Dr.Leon Reznik, <br>Professor, Golisano College of 
+Computing and Information Sciences</p>
 
 <h5> Project Overview </h5>
 This course project deals with initial exploration and modelling of 
